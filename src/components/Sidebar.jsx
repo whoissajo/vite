@@ -14,7 +14,7 @@ import {
   VolumeX,
   Music,
   Camera,
-  Image,
+  Image as ImageIcon,
   Sliders,
   Type,
   Search,
@@ -22,7 +22,10 @@ import {
   Film,
   Zap,
   SplitSquareVertical,
-  AudioLines
+  AudioLines,
+  FileText,
+  Wand2,
+  ArrowRightLeft
 } from 'lucide-react';
 
 export const TOOL_CATEGORIES = [
@@ -30,12 +33,29 @@ export const TOOL_CATEGORIES = [
     name: 'Format Conversion',
     tools: [
       { id: 'converter', name: 'Video Format Conversion', desc: 'Convert between MP4, WebM, MOV, and MKV', icon: FileVideo, badge: 'Popular' },
-      { id: 'video-to-gif', name: 'Video to GIF', desc: 'Turn video clips into animated high-quality GIFs', icon: Image },
+      { id: 'video-to-gif', name: 'Video to GIF', desc: 'Turn video clips into animated high-quality GIFs', icon: ImageIcon },
       { id: 'photos-to-video', name: 'Photos to Video', desc: 'Create slideshow video from photos and images', icon: Film }
     ]
   },
   {
-    name: 'Compression & Optimization',
+    name: 'Image & Photo Tools',
+    tools: [
+      { id: 'png-to-jpg', name: 'PNG to JPG', desc: 'Convert transparent or standard PNG to optimized JPG', icon: ArrowRightLeft, badge: 'Hot' },
+      { id: 'jpg-to-png', name: 'JPG to PNG', desc: 'Convert JPG to lossless PNG image format', icon: ImageIcon },
+      { id: 'image-converter', name: 'Image Format Converter', desc: 'Convert between WebP, PNG, and JPG with quality tuning', icon: ArrowRightLeft },
+      { id: 'image-compressor', name: 'Image Compression', desc: 'Reduce image file size with smart quality control', icon: Minimize2, badge: 'Fast' },
+      { id: 'image-bg-remover', name: 'Remove Background', desc: 'Remove solid white/color backgrounds to transparent PNG', icon: Wand2, badge: 'AI/Key' }
+    ]
+  },
+  {
+    name: 'PDF & Documents',
+    tools: [
+      { id: 'pdf-to-image', name: 'PDF to Images', desc: 'Rasterize PDF pages into high-DPI PNG or JPG images', icon: FileText, badge: 'New' },
+      { id: 'image-to-pdf', name: 'Images to PDF', desc: 'Merge multiple photos into a clean multi-page PDF', icon: Layers, badge: 'Popular' }
+    ]
+  },
+  {
+    name: 'Video Compression',
     tools: [
       { id: 'compressor', name: 'Video Compression', desc: 'Reduce video size with smart bitrate and scale presets', icon: Minimize2, badge: 'Fast' }
     ]
@@ -53,8 +73,7 @@ export const TOOL_CATEGORIES = [
       { id: 'cropper', name: 'Crop Video Frame', desc: 'Crop frame to 16:9, 9:16 (TikTok), 1:1, or custom area', icon: Crop },
       { id: 'resizer', name: 'Video Resizer', desc: 'Scale to 4K, 1080p, 720p, or custom dimensions', icon: Maximize2 },
       { id: 'speed', name: 'Change Video Speed', desc: 'Speed up or slow down video from 0.25x to 4x', icon: Gauge },
-      { id: 'reverser', name: 'Reverse Video', desc: 'Rewind and play video backwards frame-by-frame', icon: RotateCcw },
-      { id: 'subtitles', name: 'Add Subtitles', desc: 'Burn styled subtitle text onto video track', icon: Sparkles }
+      { id: 'reverser', name: 'Reverse Video', desc: 'Rewind and play video backwards frame-by-frame', icon: RotateCcw }
     ]
   },
   {
@@ -95,7 +114,7 @@ export default function Sidebar({ activeTool, onSelectTool, isOpen, onClose }) {
           <Search size={15} />
           <input
             type="text"
-            placeholder="Search tools..."
+            placeholder="Search all video & image tools..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />

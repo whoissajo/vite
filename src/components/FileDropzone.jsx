@@ -1,7 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { UploadCloud, Film, Sparkles, FileVideo } from 'lucide-react';
+import { UploadCloud, Film, Sparkles, FileVideo, Image as ImageIcon, FileText } from 'lucide-react';
 
-export default function FileDropzone({ onFileSelected, onLoadSample, acceptedTypes = 'video/*', label = 'Drop your video here or browse' }) {
+export default function FileDropzone({
+  onFileSelected,
+  onLoadSample,
+  acceptedTypes = 'video/*,image/*,application/pdf',
+  label = 'Drop your video, image, or PDF here',
+  fileCategory = 'all' // 'video' | 'image' | 'pdf' | 'all'
+}) {
   const [isDragActive, setIsDragActive] = useState(false);
   const inputRef = useRef(null);
 
@@ -28,6 +34,8 @@ export default function FileDropzone({ onFileSelected, onLoadSample, acceptedTyp
     }
   };
 
+  const IconComponent = fileCategory === 'image' ? ImageIcon : fileCategory === 'pdf' ? FileText : UploadCloud;
+
   return (
     <div
       className={`dropzone-container ${isDragActive ? 'drag-active' : ''}`}
@@ -45,12 +53,12 @@ export default function FileDropzone({ onFileSelected, onLoadSample, acceptedTyp
       />
 
       <div className="dropzone-icon-circle">
-        <UploadCloud size={32} />
+        <IconComponent size={32} />
       </div>
 
       <h3 className="dropzone-title">{label}</h3>
       <p className="dropzone-sub">
-        Supports MP4, WebM, MOV, MKV, AVI, M4V &bull; 100% processed on your machine
+        Supports MP4, WebM, MOV, PNG, JPG, WebP, PDF &bull; 100% In-Browser & Private
       </p>
 
       <div className="dropzone-actions" onClick={(e) => e.stopPropagation()}>
@@ -58,8 +66,8 @@ export default function FileDropzone({ onFileSelected, onLoadSample, acceptedTyp
           className="btn btn-primary"
           onClick={() => inputRef.current?.click()}
         >
-          <FileVideo size={16} />
-          <span>Select Video File</span>
+          <UploadCloud size={16} />
+          <span>Browse File</span>
         </button>
 
         {onLoadSample && (
@@ -68,7 +76,7 @@ export default function FileDropzone({ onFileSelected, onLoadSample, acceptedTyp
             onClick={onLoadSample}
           >
             <Sparkles size={16} color="#06b6d4" />
-            <span>Use Demo Video</span>
+            <span>Use Demo File</span>
           </button>
         )}
       </div>
