@@ -4,6 +4,7 @@ import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import FileDropzone from './components/FileDropzone';
 import ProcessingModal from './components/ProcessingModal';
+import ExtensionModal from './components/ExtensionModal';
 
 // Video Tools
 import VideoTrimmer from './tools/VideoTrimmer';
@@ -15,6 +16,10 @@ import AudioExtractor from './tools/AudioExtractor';
 import ExtractThumbnail from './tools/ExtractThumbnail';
 import VideoSpeedAndReverse from './tools/VideoSpeedAndReverse';
 import VideoToGif from './tools/VideoToGif';
+import VideoSplitter from './tools/VideoSplitter';
+import VideoMerger from './tools/VideoMerger';
+import PhotosToVideo from './tools/PhotosToVideo';
+import VideoConverter from './tools/VideoConverter';
 
 // Image & PDF Tools
 import ImageConverter from './tools/ImageConverter';
@@ -43,6 +48,7 @@ export default function App() {
   const [theme, setTheme] = useState('dark');
   const [activeTool, setActiveTool] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isExtensionModalOpen, setIsExtensionModalOpen] = useState(false);
 
   // Active loaded media state
   const [mediaData, setMediaData] = useState(null); // Video
@@ -72,6 +78,8 @@ export default function App() {
   const isImageTool = ['png-to-jpg', 'jpg-to-png', 'image-converter', 'image-compressor', 'image-bg-remover'].includes(activeTool);
   const isPdfTool = activeTool === 'pdf-to-image';
   const isImageToPdfTool = activeTool === 'image-to-pdf';
+  const isPhotosToVideoTool = activeTool === 'photos-to-video';
+  const isVideoMergerTool = activeTool === 'merger';
 
   const handleFileSelect = async (file) => {
     try {
@@ -186,6 +194,30 @@ export default function App() {
 
   // Render current tool interface
   const renderToolComponent = () => {
+    // Special tool: Photos to Video handles its own multi-upload dropzone
+    if (isPhotosToVideoTool) {
+      return (
+        <PhotosToVideo
+          onStartProcessing={handleStartProcessing}
+          onProgress={handleProgress}
+          onComplete={handleComplete}
+          onError={handleError}
+        />
+      );
+    }
+
+    // Special tool: Video Merger handles its own multi-upload dropzone
+    if (isVideoMergerTool) {
+      return (
+        <VideoMerger
+          onStartProcessing={handleStartProcessing}
+          onProgress={handleProgress}
+          onComplete={handleComplete}
+          onError={handleError}
+        />
+      );
+    }
+
     // Special tool: Images to PDF handles its own multi-upload dropzone
     if (isImageToPdfTool) {
       return (
@@ -310,7 +342,10 @@ export default function App() {
         return <VideoSpeedAndReverse {...commonVideoProps} defaultMode="reverser" />;
       case 'video-to-gif':
         return <VideoToGif {...commonVideoProps} />;
+      case 'splitter':
+        return <VideoSplitter {...commonVideoProps} />;
       case 'converter':
+        return <VideoConverter {...commonVideoProps} />;
       default:
         return <VideoTrimmer {...commonVideoProps} />;
     }
@@ -332,6 +367,7 @@ export default function App() {
           onToggleTheme={toggleTheme}
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onLoadSampleVideo={handleLoadSample}
+          onOpenExtensionModal={() => setIsExtensionModalOpen(true)}
           isProcessing={isProcessing || isLoadingMedia}
         />
 
@@ -367,6 +403,7 @@ export default function App() {
               onSelectTool={setActiveTool}
               onFileSelected={handleFileSelect}
               onLoadSample={handleLoadSample}
+              onOpenExtensionModal={() => setIsExtensionModalOpen(true)}
             />
           ) : (
             <div>
@@ -481,6 +518,11 @@ export default function App() {
         originalSize={mediaData?.fileSize || imageData?.fileSize || pdfFile?.size || 0}
         onClose={handleCloseModal}
         onDownload={handleDownload}
+      />
+
+      <ExtensionModal
+        isOpen={isExtensionModalOpen}
+        onClose={() => setIsExtensionModalOpen(false)}
       />
     </div>
   );

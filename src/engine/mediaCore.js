@@ -118,19 +118,19 @@ export function captureVideoFrame(video, format = 'image/png', quality = 0.95) {
 export function getOptimalMimeType(targetFormat = 'mp4') {
   const mimeTypes = targetFormat === 'mp4'
     ? [
-        'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
-        'video/mp4;codecs=h264,aac',
-        'video/mp4',
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm'
-      ]
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm'
+    ]
     : [
-        'video/webm;codecs=vp9,opus',
-        'video/webm;codecs=vp8,opus',
-        'video/webm',
-        'video/mp4'
-      ];
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4'
+    ];
 
   for (const type of mimeTypes) {
     if (MediaRecorder.isTypeSupported(type)) {
@@ -163,7 +163,7 @@ export async function processVideoWithCanvas({
   audioMuted = false,
   backgroundAudioUrl = null,
   backgroundAudioVolume = 0.5,
-  onProgress = () => {}
+  onProgress = () => { }
 }) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -262,7 +262,7 @@ export async function processVideoWithCanvas({
         }
         const blob = new Blob(recordedChunks, { type: mimeType });
         const resultUrl = URL.createObjectURL(blob);
-        audioCtx.close().catch(() => {});
+        audioCtx.close().catch(() => { });
         resolve({
           blob,
           url: resultUrl,
@@ -296,7 +296,7 @@ export async function processVideoWithCanvas({
 
       // Start recording
       recorder.start(100);
-      if (bgAudio) bgAudio.play().catch(() => {});
+      if (bgAudio) bgAudio.play().catch(() => { });
       await video.play();
 
       function renderFrame() {
@@ -430,9 +430,313 @@ export async function processVideoWithCanvas({
 }
 
 /**
+ * Merge and concatenate multiple video clips sequentially into a single video file
+ * 100% In-Browser & Hardware-Accelerated
+ */
+export async function mergeVideosWithCanvas({
+  videoFiles, // Array of File objects or { url, name }
+  targetWidth = 1280,
+  targetHeight = 720,
+  targetBitrate = 3500000,
+  targetFormat = 'mp4',
+  onProgress = () => { }
+}) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!videoFiles || videoFiles.length === 0) {
+        throw new Error('At least two video files are required to merge.');
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+
+      const stream = canvas.captureStream(30);
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioDest = audioCtx.createMediaStreamDestination();
+
+      const mimeType = getOptimalMimeType(targetFormat);
+      const combinedTracks = [...stream.getVideoTracks()];
+      if (audioDest.stream.getAudioTracks().length > 0) {
+        combinedTracks.push(...audioDest.stream.getAudioTracks());
+      }
+      const combinedStream = new MediaStream(combinedTracks);
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType,
+        videoBitsPerSecond: targetBitrate
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      const recordedPromise = new Promise((res) => {
+        recorder.onstop = () => {
+          audioCtx.close().catch(() => { });
+          const blob = new Blob(chunks, { type: mimeType });
+          res({
+            blob,
+            url: URL.createObjectURL(blob),
+            size: blob.size,
+            width: targetWidth,
+            height: targetHeight,
+            mimeType
+          });
+        };
+      });
+
+      recorder.start(100);
+
+      // Play through each video sequentially
+      for (let i = 0; i < videoFiles.length; i++) {
+        const fileItem = videoFiles[i];
+        const vUrl = fileItem.url || URL.createObjectURL(fileItem);
+        const tempVideo = document.createElement('video');
+        tempVideo.src = vUrl;
+        tempVideo.muted = true;
+        tempVideo.playsInline = true;
+
+        await new Promise((res, rej) => {
+          tempVideo.onloadedmetadata = res;
+          tempVideo.onerror = rej;
+        });
+
+        // Mix audio for this clip if audio track exists
+        try {
+          const vSource = audioCtx.createMediaElementSource(tempVideo);
+          vSource.connect(audioDest);
+        } catch (e) {
+          // Ignore audio connection error on non-standard media
+        }
+
+        await tempVideo.play();
+
+        await new Promise((donePlaying) => {
+          function drawClipFrame() {
+            if (tempVideo.ended || tempVideo.paused) {
+              donePlaying();
+              return;
+            }
+
+            // Fill canvas with black letterbox
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Compute aspect ratio fit
+            const vAspect = tempVideo.videoWidth / tempVideo.videoHeight;
+            const cAspect = canvas.width / canvas.height;
+            let drawW = canvas.width;
+            let drawH = canvas.height;
+            let drawX = 0;
+            let drawY = 0;
+
+            if (vAspect > cAspect) {
+              drawH = canvas.width / vAspect;
+              drawY = (canvas.height - drawH) / 2;
+            } else {
+              drawW = canvas.height * vAspect;
+              drawX = (canvas.width - drawW) / 2;
+            }
+
+            ctx.drawImage(tempVideo, drawX, drawY, drawW, drawH);
+
+            const clipProgress = (tempVideo.currentTime / Math.max(0.1, tempVideo.duration));
+            const totalProgress = Math.round(((i + clipProgress) / videoFiles.length) * 100);
+            onProgress(Math.min(99, Math.max(1, totalProgress)));
+
+            if ('requestVideoFrameCallback' in tempVideo) {
+              tempVideo.requestVideoFrameCallback(drawClipFrame);
+            } else {
+              requestAnimationFrame(drawClipFrame);
+            }
+          }
+
+          if ('requestVideoFrameCallback' in tempVideo) {
+            tempVideo.requestVideoFrameCallback(drawClipFrame);
+          } else {
+            requestAnimationFrame(drawClipFrame);
+          }
+        });
+
+        tempVideo.pause();
+      }
+
+      onProgress(100);
+      recorder.stop();
+      const result = await recordedPromise;
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+/**
+ * Generate high-definition slideshow video from multiple photos with smooth crossfade
+ * 100% In-Browser & Hardware-Accelerated
+ */
+export async function createVideoFromImages({
+  imageFiles, // Array of File or Image elements
+  secondsPerSlide = 3,
+  transitionSeconds = 0.6,
+  targetWidth = 1280,
+  targetHeight = 720,
+  backgroundAudioUrl = null,
+  targetFormat = 'mp4',
+  onProgress = () => { }
+}) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!imageFiles || imageFiles.length === 0) {
+        throw new Error('Please select at least 1 image.');
+      }
+
+      // Preload all images
+      const loadedImages = await Promise.all(
+        imageFiles.map(file => {
+          return new Promise((res, rej) => {
+            const img = new Image();
+            img.onload = () => res(img);
+            img.onerror = rej;
+            img.src = file instanceof HTMLImageElement ? file.src : URL.createObjectURL(file);
+          });
+        })
+      );
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext('2d');
+
+      const fps = 30;
+      const stream = canvas.captureStream(fps);
+
+      // Audio setup
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioDest = audioCtx.createMediaStreamDestination();
+      let bgAudio = null;
+
+      if (backgroundAudioUrl) {
+        bgAudio = new Audio(backgroundAudioUrl);
+        bgAudio.loop = true;
+        const bgSource = audioCtx.createMediaElementSource(bgAudio);
+        bgSource.connect(audioDest);
+      }
+
+      const mimeType = getOptimalMimeType(targetFormat);
+      const combinedTracks = [...stream.getVideoTracks()];
+      if (bgAudio && audioDest.stream.getAudioTracks().length > 0) {
+        combinedTracks.push(...audioDest.stream.getAudioTracks());
+      }
+      const combinedStream = new MediaStream(combinedTracks);
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType,
+        videoBitsPerSecond: 3000000
+      });
+
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) chunks.push(e.data);
+      };
+
+      const recordedPromise = new Promise((res) => {
+        recorder.onstop = () => {
+          if (bgAudio) bgAudio.pause();
+          audioCtx.close().catch(() => { });
+          const blob = new Blob(chunks, { type: mimeType });
+          res({
+            blob,
+            url: URL.createObjectURL(blob),
+            size: blob.size,
+            duration: loadedImages.length * secondsPerSlide,
+            width: targetWidth,
+            height: targetHeight,
+            mimeType
+          });
+        };
+      });
+
+      recorder.start(100);
+      if (bgAudio) bgAudio.play().catch(() => { });
+
+      const totalFramesPerSlide = Math.round(secondsPerSlide * fps);
+      const transitionFrames = Math.round(transitionSeconds * fps);
+      const totalSlides = loadedImages.length;
+      const grandTotalFrames = totalSlides * totalFramesPerSlide;
+
+      function drawImageFitted(img, alpha = 1.0) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        const iAspect = img.naturalWidth / img.naturalHeight;
+        const cAspect = canvas.width / canvas.height;
+        let dW = canvas.width;
+        let dH = canvas.height;
+        let dX = 0;
+        let dY = 0;
+
+        if (iAspect > cAspect) {
+          dH = canvas.width / iAspect;
+          dY = (canvas.height - dH) / 2;
+        } else {
+          dW = canvas.height * iAspect;
+          dX = (canvas.width - dW) / 2;
+        }
+
+        ctx.drawImage(img, dX, dY, dW, dH);
+        ctx.restore();
+      }
+
+      let currentFrame = 0;
+
+      async function renderSlideshow() {
+        for (let slideIdx = 0; slideIdx < totalSlides; slideIdx++) {
+          const currentImg = loadedImages[slideIdx];
+          const nextImg = loadedImages[(slideIdx + 1) % totalSlides];
+
+          for (let f = 0; f < totalFramesPerSlide; f++) {
+            ctx.fillStyle = '#0b0f19';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Check if in transition window
+            const remainingInSlide = totalFramesPerSlide - f;
+            if (remainingInSlide <= transitionFrames && totalSlides > 1 && slideIdx < totalSlides - 1) {
+              const blend = (transitionFrames - remainingInSlide) / transitionFrames;
+              drawImageFitted(currentImg, 1.0 - blend);
+              drawImageFitted(nextImg, blend);
+            } else {
+              drawImageFitted(currentImg, 1.0);
+            }
+
+            currentFrame++;
+            const pct = Math.round((currentFrame / grandTotalFrames) * 100);
+            onProgress(Math.min(99, Math.max(1, pct)));
+
+            // Delay for accurate FPS timing
+            await new Promise((r) => setTimeout(r, 1000 / fps));
+          }
+        }
+
+        onProgress(100);
+        recorder.stop();
+      }
+
+      renderSlideshow();
+      const result = await recordedPromise;
+      resolve(result);
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+/**
  * Extract audio track from video and convert to high-fidelity WAV PCM file
  */
-export async function extractAudioFromVideo(videoUrl, onProgress = () => {}) {
+export async function extractAudioFromVideo(videoUrl, onProgress = () => { }) {
   onProgress(20);
   const response = await fetch(videoUrl);
   const arrayBuffer = await response.arrayBuffer();
@@ -559,7 +863,7 @@ export function generateSampleVideo() {
   return new Promise((resolve) => {
     recorder.onstop = () => {
       osc.stop();
-      audioCtx.close().catch(() => {});
+      audioCtx.close().catch(() => { });
       const blob = new Blob(chunks, { type: mimeType });
       const file = new File([blob], 'videokit_sample_demo.webm', { type: mimeType });
       resolve(file);

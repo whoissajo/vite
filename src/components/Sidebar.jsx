@@ -25,7 +25,9 @@ import {
   AudioLines,
   FileText,
   Wand2,
-  ArrowRightLeft
+  ArrowRightLeft,
+  LayoutDashboard,
+  Chrome
 } from 'lucide-react';
 
 export const TOOL_CATEGORIES = [
@@ -122,6 +124,20 @@ export default function Sidebar({ activeTool, onSelectTool, isOpen, onClose }) {
       </div>
 
       <div className="sidebar-content">
+        <div style={{ marginBottom: '10px' }}>
+          <button
+            className={`nav-tool-btn ${activeTool === 'dashboard' ? 'active' : ''}`}
+            onClick={() => {
+              onSelectTool('dashboard');
+              if (onClose) onClose();
+            }}
+            style={{ fontWeight: 600 }}
+          >
+            <LayoutDashboard className="nav-icon" />
+            <span>Toolkit Overview</span>
+          </button>
+        </div>
+
         {filteredCategories.map((group) => (
           <div key={group.name}>
             <p className="sidebar-group-title">{group.name}</p>
@@ -148,6 +164,20 @@ export default function Sidebar({ activeTool, onSelectTool, isOpen, onClose }) {
             </ul>
           </div>
         ))}
+      </div>
+
+      <div style={{
+        padding: '14px 18px',
+        borderTop: '1px solid var(--border-subtle)',
+        fontSize: '0.75rem',
+        color: '#10b981',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        background: 'rgba(16, 185, 129, 0.05)'
+      }}>
+        <span className="privacy-dot" />
+        <span style={{ fontWeight: 600 }}>100% In-Browser &bull; Zero Server</span>
       </div>
     </aside>
   );

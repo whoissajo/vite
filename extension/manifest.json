@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Offline Media Toolkit - 100% In-Browser & Private",
+  "version": "1.0.0",
+  "description": "Trim, compress, convert video, edit photos, and manage PDFs offline in your browser with zero server uploads.",
+  "permissions": [
+    "storage"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Offline Media Toolkit"
+  },
+  "offline_enabled": true
+}

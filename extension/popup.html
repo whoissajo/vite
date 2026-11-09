@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline Media Toolkit</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="header">
+      <div class="brand">
+        <div class="logo-icon">⚡</div>
+        <div>
+          <h1 class="brand-title">OfflineKit</h1>
+          <span class="brand-sub">100% In-Browser & Private</span>
+        </div>
+      </div>
+      <div class="status-badge" id="offlineStatus">
+        <span class="status-dot"></span>
+        <span>Local RAM</span>
+      </div>
+    </header>
+
+    <div class="hero-card">
+      <p class="hero-desc">Process videos, photos, and PDFs locally on your device with <strong>zero server uploads</strong> and <strong>no internet required</strong>.</p>
+      <button class="launch-btn" id="launchFullApp">
+        <span>Open Fullscreen Studio</span>
+        <span class="arrow">&rarr;</span>
+      </button>
+    </div>
+
+    <div class="tools-section">
+      <h2 class="section-title">Quick Offline Tools</h2>
+      <div class="tools-grid">
+        <button class="tool-tile" data-tool="compressor">
+          <span class="tile-icon">📉</span>
+          <span class="tile-name">Video Compress</span>
+        </button>
+        <button class="tool-tile" data-tool="trimmer">
+          <span class="tile-icon">✂️</span>
+          <span class="tile-name">Video Trim</span>
+        </button>
+        <button class="tool-tile" data-tool="video-to-gif">
+          <span class="tile-icon">🎞️</span>
+          <span class="tile-name">Video to GIF</span>
+        </button>
+        <button class="tool-tile" data-tool="image-compressor">
+          <span class="tile-icon">🖼️</span>
+          <span class="tile-name">Compress Photo</span>
+        </button>
+        <button class="tool-tile" data-tool="image-converter">
+          <span class="tile-icon">🔄</span>
+          <span class="tile-name">Image Converter</span>
+        </button>
+        <button class="tool-tile" data-tool="image-bg-remover">
+          <span class="tile-icon">🪄</span>
+          <span class="tile-name">Remove BG</span>
+        </button>
+        <button class="tool-tile" data-tool="pdf-to-image">
+          <span class="tile-icon">📄</span>
+          <span class="tile-name">PDF to Images</span>
+        </button>
+        <button class="tool-tile" data-tool="image-to-pdf">
+          <span class="tile-icon">📑</span>
+          <span class="tile-name">Images to PDF</span>
+        </button>
+        <button class="tool-tile" data-tool="audio-extractor">
+          <span class="tile-icon">🎵</span>
+          <span class="tile-name">Extract Audio</span>
+        </button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <span>🔒 Privacy: Your files never leave this machine</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+

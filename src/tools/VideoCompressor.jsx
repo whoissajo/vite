@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Minimize2, Gauge, HardDrive, CheckCircle } from 'lucide-react';
+import { Minimize2, Gauge, HardDrive, CheckCircle, Sparkles, Percent } from 'lucide-react';
 import VideoPlayerWithTimeline from '../components/VideoPlayerWithTimeline';
 import { processVideoWithCanvas, formatFileSize } from '../engine/mediaCore';
 
@@ -13,19 +13,19 @@ export default function VideoCompressor({
 }) {
   const [preset, setPreset] = useState('balanced');
   const [resolution, setResolution] = useState('720p');
-  const [bitrateKbps, setBitrateKbps] = useState(1800);
+  const [bitrateKbps, setBitrateKbps] = useState(1500);
 
   const applyPreset = (mode) => {
     setPreset(mode);
     if (mode === 'extreme') {
       setResolution('480p');
-      setBitrateKbps(900);
+      setBitrateKbps(750);
     } else if (mode === 'balanced') {
       setResolution('720p');
-      setBitrateKbps(1800);
+      setBitrateKbps(1500);
     } else if (mode === 'high') {
       setResolution('1080p');
-      setBitrateKbps(3200);
+      setBitrateKbps(2600);
     }
   };
 
@@ -37,15 +37,19 @@ export default function VideoCompressor({
     if (resolution === '1080p') return { width: Math.round(1080 * aspect), height: 1080 };
     if (resolution === '720p') return { width: Math.round(720 * aspect), height: 720 };
     if (resolution === '480p') return { width: Math.round(480 * aspect), height: 480 };
+    if (resolution === '360p') return { width: Math.round(360 * aspect), height: 360 };
     return { width: origW, height: origH };
   };
 
-  // Estimated output size = (bitrate * duration) / 8
-  const estimatedSizeBytes = Math.round((bitrateKbps * 1000 * (mediaData.duration || 10)) / 8);
+  // Estimated output size = (bitrate * duration) / 8 bytes
+  const estimatedSizeBytes = Math.round((bitrateKbps * 1000 * Math.max(1, mediaData.duration || 10)) / 8);
+  const estimatedSavedPercent = mediaData.fileSize > 0 && estimatedSizeBytes < mediaData.fileSize
+    ? Math.round(((mediaData.fileSize - estimatedSizeBytes) / mediaData.fileSize) * 100)
+    : 0;
 
   const handleCompress = async () => {
     try {
-      onStartProcessing('Compressing video with browser hardware acceleration...');
+      onStartProcessing('Compressing video with local GPU hardware acceleration...');
       const targetDims = getTargetDimensions();
 
       const result = await processVideoWithCanvas({
@@ -78,9 +82,10 @@ export default function VideoCompressor({
       <div className="glass-panel settings-panel">
         <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Minimize2 size={18} color="#06b6d4" />
-          <span>Compression Presets</span>
+          <span>True Video Compressor</span>
         </h4>
 
+        {/* Compression Presets */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           <button
             className={`btn ${preset === 'extreme' ? 'btn-primary' : 'btn-secondary'}`}
@@ -88,7 +93,7 @@ export default function VideoCompressor({
             onClick={() => applyPreset('extreme')}
           >
             <span>Extreme</span>
-            <small style={{ opacity: 0.8 }}>~70% smaller</small>
+            <small style={{ opacity: 0.85, color: preset === 'extreme' ? '#fff' : '#10b981' }}>~75% smaller</small>
           </button>
           <button
             className={`btn ${preset === 'balanced' ? 'btn-primary' : 'btn-secondary'}`}
@@ -96,7 +101,7 @@ export default function VideoCompressor({
             onClick={() => applyPreset('balanced')}
           >
             <span>Balanced</span>
-            <small style={{ opacity: 0.8 }}>Recommended</small>
+            <small style={{ opacity: 0.85 }}>Recommended</small>
           </button>
           <button
             className={`btn ${preset === 'high' ? 'btn-primary' : 'btn-secondary'}`}
@@ -104,13 +109,13 @@ export default function VideoCompressor({
             onClick={() => applyPreset('high')}
           >
             <span>High Quality</span>
-            <small style={{ opacity: 0.8 }}>~30% smaller</small>
+            <small style={{ opacity: 0.85 }}>~30% smaller</small>
           </button>
         </div>
 
         <div className="setting-group">
           <label className="setting-label">
-            <span>Target Resolution</span>
+            <span>Target Output Resolution</span>
           </label>
           <select
             className="form-select"
@@ -120,30 +125,34 @@ export default function VideoCompressor({
               setPreset('custom');
             }}
           >
-            <option value="original">Original ({mediaData.width}x{mediaData.height})</option>
+            <option value="original">Original Dimensions ({mediaData.width}&times;{mediaData.height})</option>
             <option value="1080p">1080p Full HD</option>
-            <option value="720p">720p HD</option>
-            <option value="480p">480p SD (Compact)</option>
+            <option value="720p">720p HD (Optimal for Web & Mobile)</option>
+            <option value="480p">480p SD (High Compression)</option>
+            <option value="360p">360p Mobile / Email Friendly</option>
           </select>
         </div>
 
         <div className="setting-group">
           <label className="setting-label">
-            <span>Bitrate Quality</span>
+            <span>Bitrate Encoding Rate</span>
             <span className="setting-value-badge">{bitrateKbps} kbps</span>
           </label>
           <input
             type="range"
             className="range-slider"
             min={400}
-            max={6000}
-            step={100}
+            max={5000}
+            step={50}
             value={bitrateKbps}
             onChange={(e) => {
               setBitrateKbps(parseInt(e.target.value));
               setPreset('custom');
             }}
           />
+          <small style={{ color: 'var(--text-dim)', fontSize: '0.75rem' }}>
+            Lower bitrate creates smaller file size. Recommended: 800-1800 kbps.
+          </small>
         </div>
 
         <div style={{
@@ -156,11 +165,16 @@ export default function VideoCompressor({
           alignItems: 'center'
         }}>
           <div>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block' }}>Estimated Output Size</span>
-            <strong style={{ color: 'var(--accent-cyan)', fontSize: '1rem' }}>~{formatFileSize(estimatedSizeBytes)}</strong>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block' }}>Estimated Target Size</span>
+            <strong style={{ color: 'var(--accent-cyan)', fontSize: '1.05rem' }}>~{formatFileSize(estimatedSizeBytes)}</strong>
+            {estimatedSavedPercent > 0 && (
+              <span style={{ color: '#10b981', fontSize: '0.75rem', fontWeight: 600, display: 'block' }}>
+                Save ~{estimatedSavedPercent}% space
+              </span>
+            )}
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block' }}>Original</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem', display: 'block' }}>Current Original</span>
             <span>{formatFileSize(mediaData.fileSize)}</span>
           </div>
         </div>
@@ -172,7 +186,7 @@ export default function VideoCompressor({
             onClick={handleCompress}
           >
             <Minimize2 size={18} />
-            <span>Compress Video</span>
+            <span>Compress Video Now</span>
           </button>
         </div>
       </div>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline Media Toolkit - Browser Studio</title>
+  <link rel="stylesheet" href="workbench.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand">
+          <div class="logo-box">⚡</div>
+          <span class="brand-title">OfflineKit</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-title">Video Tools</div>
+        <button class="nav-item active" data-tool="compressor">📉 Video Compressor</button>
+        <button class="nav-item" data-tool="trimmer">✂️ Video Trimmer</button>
+        <button class="nav-item" data-tool="video-to-gif">🎞️ Video to GIF</button>
+        <button class="nav-item" data-tool="audio-extractor">🎵 Extract Audio (WAV)</button>
+
+        <div class="nav-group-title">Image Tools</div>
+        <button class="nav-item" data-tool="image-compressor">🖼️ Image Compressor</button>
+        <button class="nav-item" data-tool="image-converter">🔄 Image Converter (JPG/PNG/WebP)</button>
+        <button class="nav-item" data-tool="image-bg-remover">🪄 Remove Background</button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="status-pill">🟢 100% Offline Active</span>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h2 id="activeToolTitle">Video Compressor</h2>
+          <span class="privacy-tag">🔒 Zero Server Uploads &bull; Private by Physics</span>
+        </div>
+        <div class="topbar-right">
+          <button id="loadDemoBtn" class="btn btn-secondary">⚡ Load Demo File</button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- Dropzone -->
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" style="display: none;">
+          <div class="dropzone-icon">📁</div>
+          <h3 id="dropzoneLabel">Drop your file here to process</h3>
+          <p class="dropzone-sub">Supports MP4, WebM, MOV, PNG, JPG, WebP</p>
+          <div class="dropzone-buttons">
+            <button class="btn btn-primary" id="browseBtn">Browse from Computer</button>
+          </div>
+        </div>
+
+        <!-- Tool Workspace (Hidden until file selected) -->
+        <div class="workspace-grid" id="workspace" style="display: none;">
+          <div class="preview-panel">
+            <div class="media-container" id="mediaContainer">
+              <video id="videoPreview" controls style="display: none;"></video>
+              <img id="imagePreview" style="display: none;" alt="Preview">
+            </div>
+            <div class="media-meta" id="mediaMeta">
+              <span id="metaDimensions">0x0</span> &bull;
+              <span id="metaDuration">0s</span> &bull;
+              <span id="metaSize">0 KB</span>
+            </div>
+          </div>
+
+          <div class="controls-panel">
+            <div id="toolSpecificControls">
+              <!-- Dynamically populated based on active tool -->
+            </div>
+
+            <div class="action-box">
+              <button class="btn btn-primary btn-large" id="processBtn">
+                <span>Process File</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Processing / Result Modal -->
+  <div class="modal" id="modal" style="display: none;">
+    <div class="modal-card">
+      <h3 id="modalTitle">Processing in Browser...</h3>
+      <p id="modalDesc">Encoding file with hardware acceleration in your device RAM.</p>
+      <div class="progress-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="result-stats" id="resultStats" style="display: none;">
+        <div><span>Original:</span> <strong id="statOriginal">0 MB</strong></div>
+        <div><span>Output:</span> <strong id="statOutput">0 MB</strong></div>
+        <div><span>Saved:</span> <strong id="statSaved" style="color: #10b981;">0%</strong></div>
+      </div>
+      <div class="modal-actions" id="modalActions" style="display: none;">
+        <button class="btn btn-secondary" id="closeModalBtn">Done</button>
+        <button class="btn btn-primary" id="downloadBtn">Download File</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="workbench.js"></script>
+</body>
+</html>
+
