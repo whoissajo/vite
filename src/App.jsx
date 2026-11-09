@@ -165,9 +165,18 @@ export default function App() {
 
   const handleDownload = () => {
     if (!processResult || !processResult.url) return;
+    let fileName = outputFileName || 'videokit_output';
+
+    // Ensure extension matches actual container MIME type for seamless OS playback
+    if (processResult.mimeType?.includes('webm') && fileName.endsWith('.mp4')) {
+      fileName = fileName.replace(/\.mp4$/, '.webm');
+    } else if (processResult.mimeType?.includes('mp4') && fileName.endsWith('.webm')) {
+      fileName = fileName.replace(/\.webm$/, '.mp4');
+    }
+
     const a = document.createElement('a');
     a.href = processResult.url;
-    a.download = outputFileName || 'videokit_output';
+    a.download = fileName;
     a.click();
   };
 
@@ -323,9 +332,11 @@ export default function App() {
       case 'rotator':
         return <VideoTransform {...commonVideoProps} defaultMode="rotate" />;
       case 'flipper':
+        return <VideoTransform {...commonVideoProps} defaultMode="flip" />;
       case 'cropper':
-      case 'resizer':
         return <VideoTransform {...commonVideoProps} defaultMode="crop" />;
+      case 'resizer':
+        return <VideoTransform {...commonVideoProps} defaultMode="resize" />;
       case 'watermark':
         return <VideoWatermark {...commonVideoProps} />;
       case 'audio-extractor':

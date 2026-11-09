@@ -149,25 +149,29 @@ export async function renderPdfToImages(pdfFile, {
   onProgress(10);
   const arrayBuffer = await pdfFile.arrayBuffer();
 
-  // Try importing or falling back to CDN
+  // Try importing local bundle or falling back to CDN
   let pdfjsLib = window['pdfjs-dist/build/pdf'] || window.pdfjsLib;
   if (!pdfjsLib) {
     try {
       const mod = await import('pdfjs-dist');
       pdfjsLib = mod.default || mod;
+      try {
+        const workerMod = await import('pdfjs-dist/build/pdf.worker.min.js?url');
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = workerMod.default || workerMod;
+        }
+      } catch (eWorker) {
+        if (pdfjsLib.GlobalWorkerOptions) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+      }
     } catch (e) {
       await loadExternalScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
       pdfjsLib = window.pdfjsLib;
+      if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      }
     }
-  }
-
-  if (!pdfjsLib) {
-    throw new Error('PDF.js library could not be loaded in browser.');
-  }
-
-  // Set worker source
-  if (pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 
   onProgress(25);

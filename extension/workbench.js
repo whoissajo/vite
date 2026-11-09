@@ -454,7 +454,9 @@
         step();
 
         processResult = await recPromise;
-        const ext = activeTool === 'video-to-gif' ? 'gif' : 'mp4';
+        const ext = activeTool === 'video-to-gif' 
+          ? 'gif' 
+          : (mime.includes('webm') ? 'webm' : 'mp4');
         outputFileName = `${activeTool}_${loadedFile.name.split('.')[0]}.${ext}`;
         finishProcessing();
       }

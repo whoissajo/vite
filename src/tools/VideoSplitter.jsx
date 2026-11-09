@@ -80,7 +80,15 @@ export default function VideoSplitter({
       setSplitResults(results);
       setIsSplitting(false);
       onProgress(100);
-      onComplete(null, null); // Close processing modal, show split results list
+
+      const totalSize = results.reduce((acc, c) => acc + (c.result?.size || 0), 0);
+      onComplete({
+        url: results[0].result.url,
+        size: totalSize,
+        mimeType: results[0].result.mimeType,
+        isMultiple: true,
+        count: results.length
+      }, results[0].fileName);
     } catch (err) {
       setIsSplitting(false);
       onError(err.message || 'Failed to split video.');

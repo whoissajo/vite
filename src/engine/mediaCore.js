@@ -204,30 +204,59 @@ export async function processVideoWithCanvas({
       canvas.height = Math.round(outHeight);
       const ctx = canvas.getContext('2d');
 
-      // Set up Audio Mixing
+      // Set up Audio Mixing via Web Audio API
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioDest = audioCtx.createMediaStreamDestination();
 
+      // Video audio: Decode audio data directly via Web Audio API
+      // This bypasses browser autoplay restrictions and speaker mute limitations completely
+      let bufferSource = null;
       if (!audioMuted) {
         try {
-          const videoAudioSource = audioCtx.createMediaElementSource(video);
-          videoAudioSource.connect(audioDest);
-          // Also connect to audioCtx destination if not muted so audio can play
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', videoUrl, true);
+          xhr.responseType = 'arraybuffer';
+          const arrayBuffer = await new Promise((res, rej) => {
+            xhr.onload = () => (xhr.status === 200 || xhr.status === 0) ? res(xhr.response) : rej();
+            xhr.onerror = rej;
+            xhr.send();
+          });
+
+          const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+          bufferSource = audioCtx.createBufferSource();
+          bufferSource.buffer = audioBuffer;
+          bufferSource.playbackRate.value = playbackRate;
+          bufferSource.connect(audioDest);
         } catch (e) {
-          console.warn('Audio capture note: using canvas stream audio fallback', e);
+          console.warn('Audio decoding skipped (silent video or unsupported audio codec):', e);
+          bufferSource = null;
         }
       }
 
       // Background music mixing
-      let bgAudio = null;
+      let bgBufferSource = null;
       if (backgroundAudioUrl) {
-        bgAudio = new Audio(backgroundAudioUrl);
-        bgAudio.loop = true;
-        const bgSource = audioCtx.createMediaElementSource(bgAudio);
-        const bgGain = audioCtx.createGain();
-        bgGain.gain.value = backgroundAudioVolume;
-        bgSource.connect(bgGain);
-        bgGain.connect(audioDest);
+        try {
+          const bgXhr = new XMLHttpRequest();
+          bgXhr.open('GET', backgroundAudioUrl, true);
+          bgXhr.responseType = 'arraybuffer';
+          const bgAb = await new Promise((res, rej) => {
+            bgXhr.onload = () => (bgXhr.status === 200 || bgXhr.status === 0) ? res(bgXhr.response) : rej();
+            bgXhr.onerror = rej;
+            bgXhr.send();
+          });
+          const bgBuffer = await audioCtx.decodeAudioData(bgAb);
+          bgBufferSource = audioCtx.createBufferSource();
+          bgBufferSource.buffer = bgBuffer;
+          bgBufferSource.loop = true;
+          const bgGain = audioCtx.createGain();
+          bgGain.gain.value = backgroundAudioVolume;
+          bgBufferSource.connect(bgGain);
+          bgGain.connect(audioDest);
+        } catch (e) {
+          console.warn('Background audio decode skipped:', e);
+          bgBufferSource = null;
+        }
       }
 
       // Compose stream
@@ -260,6 +289,8 @@ export async function processVideoWithCanvas({
           reject(new Error('Processing was cancelled'));
           return;
         }
+        if (bufferSource) { try { bufferSource.stop(); } catch(e) {} }
+        if (bgBufferSource) { try { bgBufferSource.stop(); } catch(e) {} }
         const blob = new Blob(recordedChunks, { type: mimeType });
         const resultUrl = URL.createObjectURL(blob);
         audioCtx.close().catch(() => { });
@@ -294,9 +325,25 @@ export async function processVideoWithCanvas({
         video.onseeked = res;
       });
 
-      // Start recording
+      // Start recording and audio nodes
       recorder.start(100);
-      if (bgAudio) bgAudio.play().catch(() => { });
+
+      if (bufferSource) {
+        try {
+          bufferSource.start(0, actualStart, totalProcessDuration / playbackRate);
+        } catch (e) {
+          console.warn('Audio start note:', e);
+        }
+      }
+
+      if (bgBufferSource) {
+        try {
+          bgBufferSource.start(0);
+        } catch (e) {
+          console.warn('BG audio start note:', e);
+        }
+      }
+
       await video.play();
 
       function renderFrame() {
@@ -308,7 +355,8 @@ export async function processVideoWithCanvas({
 
         if (currentPos >= actualEnd || video.ended) {
           video.pause();
-          if (bgAudio) bgAudio.pause();
+          if (bufferSource) { try { bufferSource.stop(); } catch(e) {} }
+          if (bgBufferSource) { try { bgBufferSource.stop(); } catch(e) {} }
           recorder.stop();
           return;
         }
@@ -504,12 +552,26 @@ export async function mergeVideosWithCanvas({
           tempVideo.onerror = rej;
         });
 
-        // Mix audio for this clip if audio track exists
+        // Decode and play audio for this clip if audio track exists
+        let clipAudioSource = null;
         try {
-          const vSource = audioCtx.createMediaElementSource(tempVideo);
-          vSource.connect(audioDest);
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', vUrl, true);
+          xhr.responseType = 'arraybuffer';
+          const ab = await new Promise((r) => {
+            xhr.onload = () => (xhr.status === 200 || xhr.status === 0) ? r(xhr.response) : r(null);
+            xhr.onerror = () => r(null);
+            xhr.send();
+          });
+          if (ab) {
+            const aBuf = await audioCtx.decodeAudioData(ab);
+            clipAudioSource = audioCtx.createBufferSource();
+            clipAudioSource.buffer = aBuf;
+            clipAudioSource.connect(audioDest);
+            clipAudioSource.start(0);
+          }
         } catch (e) {
-          // Ignore audio connection error on non-standard media
+          clipAudioSource = null;
         }
 
         await tempVideo.play();
@@ -517,6 +579,7 @@ export async function mergeVideosWithCanvas({
         await new Promise((donePlaying) => {
           function drawClipFrame() {
             if (tempVideo.ended || tempVideo.paused) {
+              if (clipAudioSource) { try { clipAudioSource.stop(); } catch(e) {} }
               donePlaying();
               return;
             }
@@ -614,21 +677,35 @@ export async function createVideoFromImages({
       const fps = 30;
       const stream = canvas.captureStream(fps);
 
-      // Audio setup
+      // Audio setup via Web Audio buffer source
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const audioDest = audioCtx.createMediaStreamDestination();
-      let bgAudio = null;
+      let bgBufferSource = null;
 
       if (backgroundAudioUrl) {
-        bgAudio = new Audio(backgroundAudioUrl);
-        bgAudio.loop = true;
-        const bgSource = audioCtx.createMediaElementSource(bgAudio);
-        bgSource.connect(audioDest);
+        try {
+          const bgXhr = new XMLHttpRequest();
+          bgXhr.open('GET', backgroundAudioUrl, true);
+          bgXhr.responseType = 'arraybuffer';
+          const bgAb = await new Promise((res, rej) => {
+            bgXhr.onload = () => (bgXhr.status === 200 || bgXhr.status === 0) ? res(bgXhr.response) : rej();
+            bgXhr.onerror = rej;
+            bgXhr.send();
+          });
+          const bgBuffer = await audioCtx.decodeAudioData(bgAb);
+          bgBufferSource = audioCtx.createBufferSource();
+          bgBufferSource.buffer = bgBuffer;
+          bgBufferSource.loop = true;
+          bgBufferSource.connect(audioDest);
+        } catch (e) {
+          console.warn('Slideshow audio decode note:', e);
+          bgBufferSource = null;
+        }
       }
 
       const mimeType = getOptimalMimeType(targetFormat);
       const combinedTracks = [...stream.getVideoTracks()];
-      if (bgAudio && audioDest.stream.getAudioTracks().length > 0) {
+      if (bgBufferSource && audioDest.stream.getAudioTracks().length > 0) {
         combinedTracks.push(...audioDest.stream.getAudioTracks());
       }
       const combinedStream = new MediaStream(combinedTracks);
@@ -645,7 +722,7 @@ export async function createVideoFromImages({
 
       const recordedPromise = new Promise((res) => {
         recorder.onstop = () => {
-          if (bgAudio) bgAudio.pause();
+          if (bgBufferSource) { try { bgBufferSource.stop(); } catch(e) {} }
           audioCtx.close().catch(() => { });
           const blob = new Blob(chunks, { type: mimeType });
           res({
@@ -661,7 +738,9 @@ export async function createVideoFromImages({
       });
 
       recorder.start(100);
-      if (bgAudio) bgAudio.play().catch(() => { });
+      if (bgBufferSource) {
+        try { bgBufferSource.start(0); } catch(e) {}
+      }
 
       const totalFramesPerSlide = Math.round(secondsPerSlide * fps);
       const transitionFrames = Math.round(transitionSeconds * fps);
@@ -735,11 +814,27 @@ export async function createVideoFromImages({
 
 /**
  * Extract audio track from video and convert to high-fidelity WAV PCM file
+ * Uses XHR to load blob URLs reliably in all browsers (fetch can fail on blob:)
  */
 export async function extractAudioFromVideo(videoUrl, onProgress = () => { }) {
   onProgress(20);
-  const response = await fetch(videoUrl);
-  const arrayBuffer = await response.arrayBuffer();
+
+  // Use XHR which reliably loads blob: URLs in all browsers
+  const arrayBuffer = await new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', videoUrl, true);
+    xhr.responseType = 'arraybuffer';
+    xhr.onload = () => {
+      if (xhr.status === 200 || xhr.status === 0) {
+        resolve(xhr.response);
+      } else {
+        reject(new Error('Failed to load video data for audio extraction.'));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error loading video for audio extraction.'));
+    xhr.send();
+  });
+
   onProgress(50);
 
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();

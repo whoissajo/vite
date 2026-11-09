@@ -29,7 +29,16 @@ export default function PdfToImage({
 
       setRenderedPages(result.pages);
       setIsRendering(false);
-      onComplete(null, null); // Close modal, show gallery directly
+      onProgress(100);
+
+      const totalSize = result.pages.reduce((acc, p) => acc + (p.size || 0), 0);
+      onComplete({
+        url: result.pages[0].dataUrl,
+        size: totalSize,
+        mimeType: format === 'jpeg' ? 'image/jpeg' : format === 'webp' ? 'image/webp' : 'image/png',
+        isMultiple: true,
+        count: result.pages.length
+      }, result.pages[0].fileName);
     } catch (err) {
       setIsRendering(false);
       onError(err.message || 'Failed to render PDF pages.');
