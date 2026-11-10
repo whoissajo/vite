@@ -8,7 +8,7 @@ main { flex: 1; outline: none; min-width: 0; }
 .badge-warn { background: color-mix(in srgb, var(--warn) 14%, transparent); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, transparent); }
 
 /* ───────────── header ───────────── */
-.site-header { position: sticky; top: 0; z-index: 100; height: var(--header-h); background: var(--header-bg); -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4); border-bottom: 1px solid transparent; transition: border-color 0.2s, background 0.2s; }
+.site-header { position: sticky; top: 0; z-index: 100; height: var(--header-h); background: var(--header-bg); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: border-color 0.2s, background 0.2s; }
 .site-header.scrolled { border-bottom-color: var(--border); }
 .header-inner { height: 100%; display: flex; align-items: center; gap: 10px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; letter-spacing: -0.03em; flex: none; }
@@ -79,8 +79,8 @@ main { flex: 1; outline: none; min-width: 0; }
 .dir-section h2 .muted { font-family: var(--font-sans); font-weight: 400; letter-spacing: 0; }
 
 .tool-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.tool-card { --mx: 50%; --my: 50%; position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); overflow: hidden; min-width: 0; transition: transform 0.25s var(--ease), border-color 0.2s, background 0.2s; isolation: isolate; }
-.tool-card::before { content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 0.25s; background: radial-gradient(240px circle at var(--mx) var(--my), hsl(var(--hue) 90% 65% / 0.16), transparent 70%); }
+.tool-card { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--border); overflow: hidden; min-width: 0; transition: transform 0.2s var(--ease), border-color 0.2s, background 0.2s; isolation: isolate; }
+.tool-card::before { content: ''; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 0.2s; background: radial-gradient(circle at 50% 0%, hsl(var(--hue) 90% 65% / 0.14), transparent 70%); pointer-events: none; }
 .tool-card:hover { transform: translateY(-2px); border-color: hsl(var(--hue) 80% 65% / 0.45); }
 .tool-card:hover::before { opacity: 1; }
 .tool-card-icon { width: 42px; height: 42px; flex: none; border-radius: 13px; display: grid; place-items: center; background: hsl(var(--hue) 90% 65% / 0.14); color: hsl(var(--hue) 90% 70%); border: 1px solid hsl(var(--hue) 90% 65% / 0.25); transition: transform 0.3s var(--ease); }

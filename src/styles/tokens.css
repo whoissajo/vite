@@ -46,7 +46,7 @@
   --glow: 0 0 0 1px rgba(139, 108, 255, 0.35), 0 8px 40px -8px rgba(139, 108, 255, 0.45);
   --checker-a: #1a1d2b;
   --checker-b: #232738;
-  --header-bg: rgba(10, 11, 16, 0.72);
+  --header-bg: rgba(10, 11, 16, 0.85);
 }
 
 [data-theme='light'] {
@@ -77,5 +77,5 @@
   --glow: 0 0 0 1px rgba(109, 74, 255, 0.35), 0 8px 40px -10px rgba(109, 74, 255, 0.35);
   --checker-a: #e6e8f2;
   --checker-b: #f4f5fb;
-  --header-bg: rgba(247, 247, 251, 0.78);
+  --header-bg: rgba(247, 247, 251, 0.9);
 }

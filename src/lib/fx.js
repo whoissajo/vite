@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-/** Cursor-following spotlight: spread the returned props on any element styled with .spot. */
+/** Cursor-following spotlight: lightweight no-op to prevent pointer-move reflows on low-end hardware. */
 export function useSpotlight() {
-  return {
-    onPointerMove: (e) => {
-      const r = e.currentTarget.getBoundingClientRect();
-      e.currentTarget.style.setProperty('--mx', `${e.clientX - r.left}px`);
-      e.currentTarget.style.setProperty('--my', `${e.clientY - r.top}px`);
-    },
-  };
+  return {};
 }
 
 /** Adds `.in` once the element scrolls into view (CSS handles the animation). */
-export function useReveal(options = { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }) {
+export function useReveal(options = { threshold: 0.08, rootMargin: '0px 0px -4% 0px' }) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
@@ -26,7 +20,7 @@ export function useReveal(options = { threshold: 0.15, rootMargin: '0px 0px -8% 
 }
 
 /** Animates 0 → value when scrolled into view. */
-export function useCountUp(target, { duration = 1400 } = {}) {
+export function useCountUp(target, { duration = 1200 } = {}) {
   const ref = useRef(null);
   const [val, setVal] = useState(0);
   useEffect(() => {
@@ -45,7 +39,7 @@ export function useCountUp(target, { duration = 1400 } = {}) {
         if (p < 1) raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
-    }, { threshold: 0.4 });
+    }, { threshold: 0.3 });
     io.observe(el);
     return () => { io.disconnect(); cancelAnimationFrame(raf); };
   }, [target, duration]);
