@@ -1,0 +1,21 @@
+:root { color-scheme: dark light; --bg: #0a0b10; --bg2: #11131c; --text: #eef0f7; --dim: #a4a9bf; --faint: #6d728a; --border: rgba(255,255,255,.1); --hover: rgba(255,255,255,.07); --accent: #8b6cff; }
+@media (prefers-color-scheme: light) { :root { --bg: #f7f7fb; --bg2: #fff; --text: #12142a; --dim: #4d5270; --faint: #80849e; --border: rgba(20,24,50,.12); --hover: rgba(20,24,50,.06); --accent: #6d4aff; } }
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 380px; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+header { display: flex; align-items: center; gap: 10px; padding: 14px 14px 8px; }
+header div { flex: 1; line-height: 1.15; } header b { font-size: 17px; letter-spacing: -.02em; } header b span { color: var(--accent); } header small { display: block; color: var(--faint); font-size: 11.5px; }
+button { font: inherit; cursor: pointer; }
+#open-app { border: 1px solid var(--border); background: var(--bg2); color: var(--text); border-radius: 9px; padding: 6px 10px; font-size: 12.5px; font-weight: 600; }
+#open-app:hover { background: var(--hover); }
+.search { padding: 6px 14px; }
+#q { width: 100%; height: 38px; border-radius: 11px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); padding: 0 12px; font: inherit; }
+#q:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+#chips { display: flex; gap: 6px; padding: 4px 14px 8px; overflow-x: auto; scrollbar-width: none; }
+#chips button { flex: none; border: 1px solid var(--border); background: transparent; color: var(--dim); border-radius: 999px; padding: 4px 11px; font-size: 12px; font-weight: 600; }
+#chips button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: transparent; }
+ul { list-style: none; margin: 0; padding: 0 8px 6px; max-height: 360px; overflow-y: auto; }
+li button { width: 100%; text-align: left; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--text); }
+li button:hover, li button.active { background: var(--hover); }
+li b { font-size: 13.5px; } li span { font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.empty { padding: 22px; text-align: center; color: var(--faint); }
+footer { padding: 9px 14px 12px; border-top: 1px solid var(--border); color: var(--faint); font-size: 11.5px; text-align: center; }

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OffKit</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header>
+      <img src="../icons/icon-48.png" alt="" width="28" height="28" />
+      <div><b>Off<span>Kit</span></b><small id="count">offline tools</small></div>
+      <button id="open-app" title="Open the full app">Open app ↗</button>
+    </header>
+    <div class="search"><input id="q" type="search" placeholder="Search tools…" autocomplete="off" autofocus aria-label="Search tools" /></div>
+    <nav id="chips" aria-label="Categories"></nav>
+    <ul id="list" role="listbox"></ul>
+    <footer>Everything runs on your device · works with no internet</footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

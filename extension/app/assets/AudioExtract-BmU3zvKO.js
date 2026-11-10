@@ -1,0 +1,1 @@
+import{t as e}from"./MediaShell-CFIszOtP.js";import{AudioConvertInner as t}from"./AudioConvert-BRpxUzB5.js";import{$ as n}from"./index-Bm0XKBNL.js";var r=n();function i(){return(0,r.jsx)(e,{kind:`video`,title:`Drop a video to pull the audio out`,children:e=>(0,r.jsx)(t,{extract:!0,...e},e.file.name+e.file.size)})}export{i as default};

@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "OffKit — tools that work offline",
+  "short_name": "OffKit",
+  "version": "2.0.0",
+  "description": "Image, video, PDF, audio, text and developer tools that run entirely on your device. No uploads, no internet needed.",
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "action": {
+    "default_title": "OffKit — offline tools",
+    "default_popup": "popup/popup.html",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "minimum_chrome_version": "102",
+  "browser_specific_settings": { "gecko": { "id": "offkit@offkit.app", "strict_min_version": "115.0" } }
+}
